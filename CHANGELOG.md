@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.2] - 2026-10-17
+
+### Fixed
+- **Renderer Freeze & Infinite Event Loop Fix (`RESULT_CODE_HUNG`)**:
+  - Eliminated synthetic `window.dispatchEvent(new Event('resize'))` calls from content script MutationObserver and focusin listeners that triggered infinite feedback loops with host page responsive layouts.
+  - Implemented an internal `repositionAllBadges()` registry to reposition extension badges without broadcasting global window events.
+  - Added debounced scheduling via `setTimeout` and `requestAnimationFrame` for all DOM mutation scans and badge repositions.
+  - Isolated mutation observers to ignore internal extension containers (`buffer-auth-inline-host`) and self-induced style mutations.
+  - Added guards to skip observer initialization in invisible tracking/captcha beacon iframes.
+
+---
+
 ## [1.2.1] - 2026-10-15
 
 ### Fixed
@@ -19,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enabled `"all_frames": true` in `manifest.json` for seamless 2FA prompt detection inside login iframes.
   - Fixed segmented 6-box OTP badge docking: positioned neatly beside the last digit box without modifying padding or distorting individual digit input boxes.
   - Upgraded badge button aesthetics to the official squircle gradient (`#004a77` to `#002d4c`) with round-cap shield vector and claymorphic elevation.
+- **Brand Icon Priority & False Positive Resolution (TeamViewer & Gmail Logins)**:
+  - Fixed a critical brand resolution bug where combining issuer and account strings caused any service registered with a `@gmail.com` address (e.g. TeamViewer, Discord, GitHub, Steam, custom company VPNs) to falsely match Rule #1 (`google / gmail`) and display Google's icon instead of the service's own brand.
+  - Implemented an issuer-first resolution pipeline: non-generic issuers (`TeamViewer`, `GitHub`, `Steam`, etc.) are resolved with highest priority and will never leak into matching the user's personal email domain.
+  - Added strict word-boundary regexes for brand matching to eliminate substring collisions (e.g., `Lawson` != `AWS`, `Mainstream` != `Steam`, `Schubert` != `Uber`, `Airbnb` != `Binance`).
+  - Improved `otpauth://` URI label parsing to cleanly split `Issuer:Account` pairs when the `issuer` query parameter is missing.
+  - Expanded the offline vector catalog to 46+ top services (added Yahoo, Slack, Docker, DigitalOcean, Battle.net, Riot Games, Nintendo, PlayStation, Atlassian/Bitbucket, Airbnb).
 
 ---
 

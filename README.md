@@ -1,7 +1,7 @@
 # Buffer Authenticator
 
-[![CI Build & Security Audit](https://github.com/Likhon545466/buffer-authenticator/actions/workflows/build.yml/badge.svg)](https://github.com/Likhon545466/buffer-authenticator/actions/workflows/build.yml)
-[![Latest Release](https://img.shields.io/github/v/release/Likhon545466/buffer-authenticator?color=blue&label=Release)](https://github.com/Likhon545466/buffer-authenticator/releases/latest)
+[![CI Build & Security Audit](https://github.com/likhsout/buffer-authenticator/actions/workflows/build.yml/badge.svg)](https://github.com/likhsout/buffer-authenticator/actions/workflows/build.yml)
+[![Latest Release](https://img.shields.io/github/v/release/likhsout/buffer-authenticator?color=blue&label=Release)](https://github.com/likhsout/buffer-authenticator/releases/latest)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-success.svg)](manifest.json)
 [![Security: AES--256--GCM](https://img.shields.io/badge/Vault-AES--256--GCM-green.svg)](docs/security-audit.md)
@@ -34,7 +34,7 @@
 ### Option 1: Install from Pre-built Release (Recommended)
 
 1. **Download the Latest Release**:
-   - Go to [**GitHub Releases**](https://github.com/Likhon545466/buffer-authenticator/releases/latest) and download [`buffer-authenticator.zip`](https://github.com/Likhon545466/buffer-authenticator/releases/latest/download/buffer-authenticator.zip).
+   - Go to [**GitHub Releases**](https://github.com/likhsout/buffer-authenticator/releases/latest) and download [`buffer-authenticator.zip`](https://github.com/likhsout/buffer-authenticator/releases/latest/download/buffer-authenticator.zip).
 2. **Extract the ZIP Archive**:
    - Unpack `buffer-authenticator.zip` into a permanent directory on your computer (e.g., `~/Documents/buffer-authenticator` or `C:\Users\<user>\Documents\buffer-authenticator`).
    > [!IMPORTANT]
@@ -64,7 +64,7 @@ If you prefer building the extension from source:
 #### Build Steps
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Likhon545466/buffer-authenticator.git
+git clone https://github.com/likhsout/buffer-authenticator.git
 cd buffer-authenticator
 
 # 2. Install dependencies

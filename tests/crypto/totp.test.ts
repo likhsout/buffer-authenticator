@@ -31,6 +31,11 @@ describe('TOTP Core & RFC Compliance', () => {
     expect(parsed.algorithm).toBe('SHA1');
     expect(parsed.digits).toBe(6);
     expect(parsed.period).toBe(30);
+
+    const uriWithoutIssuerParam = 'otpauth://totp/TeamViewer:alice%40gmail.com?secret=JBSWY3DPEHPK3PXP';
+    const parsedTV = parseOtpAuthUri(uriWithoutIssuerParam);
+    expect(parsedTV.issuer).toBe('TeamViewer');
+    expect(parsedTV.account).toBe('alice@gmail.com');
   });
 
   it('parses HOTP URI with counter', () => {

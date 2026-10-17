@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isOtpField, getSegmentedCluster } from '../../src/content/content';
+import { isOtpField, getSegmentedCluster, repositionAllBadges } from '../../src/content/content';
 
 // Simple mock for HTMLInputElement in node test environment
 function createMockInput(attrs: {
@@ -134,5 +134,9 @@ describe('2FA / OTP Field Detection Heuristics', () => {
     expect(isOtpField(boxes[5])).toBe(true);
     // Siblings should be marked as cluster-sibling
     expect(boxes[0].getAttribute('data-buffer-auth-detected')).toBe('cluster-sibling');
+  });
+
+  it('safely runs repositionAllBadges without throwing or requiring global window events', () => {
+    expect(() => repositionAllBadges()).not.toThrow();
   });
 });

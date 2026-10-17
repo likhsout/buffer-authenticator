@@ -49,9 +49,19 @@ export function parseOtpAuthUri(uriString: string): {
   }
 
   const digits = parsed.digits || 6;
-  const issuer = parsed.issuer || '';
-  const account = parsed.label || '';
   const secret = parsed.secret.base32;
+  let issuer = (parsed.issuer || '').trim();
+  let account = (parsed.label || '').trim();
+
+  if (!issuer && account.includes(':')) {
+    const parts = account.split(':');
+    issuer = parts[0].trim();
+    account = parts.slice(1).join(':').trim();
+  } else if (!issuer && account.includes(' - ')) {
+    const parts = account.split(' - ');
+    issuer = parts[0].trim();
+    account = parts.slice(1).join(' - ').trim();
+  }
 
   let period = 30;
   let counter: number | undefined;

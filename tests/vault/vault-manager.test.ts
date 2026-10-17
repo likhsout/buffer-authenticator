@@ -200,7 +200,7 @@ describe('VaultManager', () => {
 
     await vaultManager.addAccount({
       issuer: 'GitHub',
-      account: 'Likhon545466',
+      account: 'likhsout',
       secret: 'JBSWY3DPEHPK3PXP',
       algorithm: 'SHA1',
       digits: 6,
@@ -232,7 +232,7 @@ describe('VaultManager', () => {
     const githubMatch = await vaultManager.getCodeForDomain('github.com');
     expect(githubMatch).not.toBeNull();
     expect(githubMatch?.issuer).toBe('GitHub');
-    expect(githubMatch?.account).toBe('Likhon545466');
+    expect(githubMatch?.account).toBe('likhsout');
     expect(githubMatch?.matched.length).toBe(1);
     expect(githubMatch?.code).toMatch(/^\d{6}$/);
 
@@ -259,7 +259,7 @@ describe('VaultManager', () => {
     const restoredGithubMatch = await vaultManager.getCodeForDomain('github.com');
     expect(restoredGithubMatch).not.toBeNull();
     expect(restoredGithubMatch?.issuer).toBe('GitHub');
-    expect(restoredGithubMatch?.account).toBe('Likhon545466');
+    expect(restoredGithubMatch?.account).toBe('likhsout');
   });
 
   it('changes master password and re-encrypts vault with new salt', async () => {

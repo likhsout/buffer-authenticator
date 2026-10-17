@@ -19,6 +19,19 @@ import { getBrandInfo } from '../utils/brand-icons';
 const HOST_CONTAINER_CLASS = 'buffer-auth-inline-host';
 const PROCESSED_ATTR = 'data-buffer-auth-detected';
 
+// Internal registry of active badge update callbacks to avoid firing global window resize events
+const activeBadgeUpdaters = new Set<() => void>();
+
+export function repositionAllBadges(): void {
+  activeBadgeUpdaters.forEach((update) => {
+    try {
+      update();
+    } catch {
+      // Ignored
+    }
+  });
+}
+
 /**
  * Detect if input is part of a 4-8 box split OTP cluster (e.g. GitHub, Amazon, Steam)
  */
@@ -819,6 +832,7 @@ function attachAutofillTrigger(input: HTMLInputElement) {
    */
   function updateBadgePosition() {
     if (!document.contains(input)) {
+      activeBadgeUpdaters.delete(updateBadgePosition);
       host.remove();
       return;
     }
@@ -1346,6 +1360,8 @@ function attachAutofillTrigger(input: HTMLInputElement) {
   input.addEventListener('focus', updateBadgePosition);
   input.addEventListener('input', updateBadgePosition);
 
+  activeBadgeUpdaters.add(updateBadgePosition);
+
   // Initial positioning
   updateBadgePosition();
   requestAnimationFrame(updateBadgePosition);
@@ -1377,48 +1393,113 @@ function scanForOtpFields(root: ParentNode = document) {
   }
 }
 
+// Check if the current context is a tiny tracking/captcha iframe
+function isIgnoredFrame(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (window !== window.top && (window.innerWidth <= 10 || window.innerHeight <= 10)) {
+      return true;
+    }
+  } catch {
+    // Cross-origin restriction
+  }
+  return false;
+}
+
+// Debounced scheduler for scanning and badge updates to protect the main thread
+let scanDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+let scanScheduledRaf: number | null = null;
+
+function scheduleScan(delay = 150): void {
+  if (scanDebounceTimer) return;
+  scanDebounceTimer = setTimeout(() => {
+    scanDebounceTimer = null;
+    if (typeof requestAnimationFrame === 'function') {
+      if (scanScheduledRaf) cancelAnimationFrame(scanScheduledRaf);
+      scanScheduledRaf = requestAnimationFrame(() => {
+        scanScheduledRaf = null;
+        scanForOtpFields();
+        repositionAllBadges();
+      });
+    } else {
+      scanForOtpFields();
+      repositionAllBadges();
+    }
+  }, delay);
+}
+
 // Initial scan and observer setup
-if (typeof document !== 'undefined') {
+if (typeof document !== 'undefined' && !isIgnoredFrame()) {
   scanForOtpFields();
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => scanForOtpFields());
   }
   if (typeof window !== 'undefined') {
     window.addEventListener('load', () => scanForOtpFields());
-    setTimeout(() => scanForOtpFields(), 150);
-    setTimeout(() => scanForOtpFields(), 500);
-    setTimeout(() => scanForOtpFields(), 1200);
+    setTimeout(() => scanForOtpFields(), 200);
+    setTimeout(() => scanForOtpFields(), 800);
   }
 
-  // Lightweight incremental MutationObserver
+  // Lightweight incremental MutationObserver with debouncing and loop isolation
   const observer = new MutationObserver((mutations) => {
-    let needsScan = false;
+    let hasRelevantMutation = false;
+
     for (let m = 0; m < mutations.length; m++) {
       const mut = mutations[m];
+      const target = mut.target;
+
+      // Ignore mutations originating from extension's own host containers
+      if (
+        target instanceof Element &&
+        (target.classList.contains(HOST_CONTAINER_CLASS) ||
+          target.closest?.(`.${HOST_CONTAINER_CLASS}`))
+      ) {
+        continue;
+      }
+
       if (mut.type === 'childList') {
         const added = mut.addedNodes;
         for (let i = 0; i < added.length; i++) {
           const node = added[i];
           if (node.nodeType === 1) {
             const el = node as Element;
-            if (el.tagName === 'INPUT' && isOtpField(el as HTMLInputElement)) {
-              attachAutofillTrigger(el as HTMLInputElement);
+            if (el.classList.contains(HOST_CONTAINER_CLASS)) {
+              continue;
+            }
+            if (el.tagName === 'INPUT') {
+              if (isOtpField(el as HTMLInputElement)) {
+                attachAutofillTrigger(el as HTMLInputElement);
+              }
             } else if (el.firstElementChild) {
-              scanForOtpFields(el);
+              hasRelevantMutation = true;
             }
           }
         }
       } else if (mut.type === 'attributes') {
-        needsScan = true;
+        if (target instanceof Element) {
+          // If our own script adjusted the input padding, ignore the style mutation
+          if (target.hasAttribute(PROCESSED_ATTR) && mut.attributeName === 'style') {
+            continue;
+          }
+          if (
+            target.tagName === 'INPUT' ||
+            mut.attributeName === 'hidden' ||
+            mut.attributeName === 'class' ||
+            mut.attributeName === 'style'
+          ) {
+            hasRelevantMutation = true;
+          }
+        }
       }
     }
-    if (needsScan) {
-      scanForOtpFields();
-      window.dispatchEvent(new Event('resize'));
+
+    if (hasRelevantMutation) {
+      scheduleScan(150);
     }
   });
 
   function startObserver() {
+    if (isIgnoredFrame()) return;
     const target = document.documentElement || document.body;
     if (target) {
       observer.observe(target, {
@@ -1441,7 +1522,7 @@ if (typeof document !== 'undefined') {
         if (isOtpField(target)) {
           attachAutofillTrigger(target);
         } else if (target.hasAttribute(PROCESSED_ATTR)) {
-          window.dispatchEvent(new Event('resize'));
+          repositionAllBadges();
         }
       }
     },
